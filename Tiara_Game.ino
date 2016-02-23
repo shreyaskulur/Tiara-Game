@@ -10,14 +10,14 @@
 
 
 #define LOAD_PIN 7  //load pin of MAX7219
-#define RING A0
-#define WIRE_LOOP A1
-#define END_POINT A2
-#define END_INDICATOR 3
-#define TRIAL_TIME 1000 //time until which game doesnt end
+#define RING A0    //hand held part connects to this
+#define WIRE_LOOP A1   //game loop connects to this
+#define END_POINT A2   //end point detector pad connects to this
+#define END_INDICATOR 3   //alarm or LED conncets to this to show game ended
+#define TRIAL_TIME 500 //time until which game doesnt end
 
-long int startTime = 0;
-long int endTime = 0;
+long int startTime = 0;  //to store start time
+long int endTime = 0;  //to store time the game ended
 int gameStatus = 0; //0 = not started, 1= Started ongoing, 2=ended, 3=won
 
 /*
@@ -70,13 +70,6 @@ void init_display()
   
 }
 
-void print2digits(unsigned int number) {
-  if (number >= 0 && number < 10) {
-    Serial.write('0');
-  }
-  Serial.print(number);
-}
-
 void display_time()
 {
   //blank all the digits
@@ -91,6 +84,8 @@ void display_time()
   //maxTransfer(6, 0x80);
   //if(temp<1000)
   //maxTransfer(5, 0);
+
+  //display time
   for(int i=0; temp>0; i++)
   {
     if(8-i == 6)
@@ -104,7 +99,7 @@ void display_time()
 void setup() {
   
   Serial.begin(9600);
-  Serial.println("Game");
+  Serial.println("Game Reset");
   Serial.println("---------------------------");  
   init_display(); //initialise display
 
@@ -124,6 +119,7 @@ void loop() {
     {
       startTime = millis();
       gameStatus = 1; 
+      Serial.println("Game started");
     }
   if(gameStatus == 1)
     if((millis() - startTime) > TRIAL_TIME)
@@ -132,11 +128,20 @@ void loop() {
         endTime = millis();
         gameStatus = 2;
         digitalWrite(END_INDICATOR, HIGH);
+        Serial.print("Game Lost @ ");
+        Serial.print((endTime-startTime)/1000);
+        Serial.print(":");
+        Serial.println((endTime-startTime)%1000);
       }
   if(gameStatus == 1)
     if(digitalRead(END_POINT)== LOW)
     {
+      endTime = millis();
       gameStatus = 3;
+      Serial.print("Game WON @ ");
+      Serial.print((endTime-startTime)/1000);
+      Serial.print(":");
+      Serial.println((endTime-startTime)%1000);
     }
   display_time();
   delay(1);
